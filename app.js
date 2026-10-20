@@ -114,7 +114,6 @@ function renderHeader(){
   $("title").textContent = m.title || "TRPG日程調整";
   document.title = (m.title || "TRPG日程調整");
   $("m-scenario").textContent = m.scenario || "未設定";
-  $("m-time").textContent = m.time || "未設定";
   $("m-count").textContent = S.players.length + "人";
   const n=$("m-note"); n.textContent = m.note || ""; n.hidden = !m.note;
 }
@@ -275,8 +274,7 @@ function renderGmDates(){
 function fillMetaInputs(){
   if (S.metaDirty) return;
   $("g-title").value=S.meta.title||""; $("g-scenario").value=S.meta.scenario||"";
-  $("g-time").value=S.meta.time||""; $("g-note").value=S.meta.note||"";
-  $("g-status").value=S.meta.status||"adjusting"; $("g-decided").value=S.meta.decided||"";
+  $("g-note").value=S.meta.note||""; $("g-status").value=S.meta.status||"adjusting";
 }
 function renderAll(){ renderHeader(); renderBest(); renderGrid(); renderGmDates(); }
 function applyGM(){ $("gm-panel").hidden = !S.isGM; if (S.isGM){ fillMetaInputs(); renderCal(); } }
@@ -355,11 +353,10 @@ function bootTable(){
   });
 
   // GM
-  ["g-title","g-scenario","g-time","g-note","g-status","g-decided"].forEach(id=>$(id).addEventListener("input",()=>{S.metaDirty=true;}));
+  ["g-title","g-scenario","g-note","g-status"].forEach(id=>$(id).addEventListener("input",()=>{S.metaDirty=true;}));
   $("g-save").addEventListener("click", async()=>{
     try{
-      await updateDoc(tableRef,{title:$("g-title").value.trim(), scenario:$("g-scenario").value.trim(), time:$("g-time").value.trim(),
-        note:$("g-note").value.trim(), status:$("g-status").value, decided:$("g-decided").value||""});
+      await updateDoc(tableRef,{title:$("g-title").value.trim(), scenario:$("g-scenario").value.trim(), note:$("g-note").value.trim(), status:$("g-status").value});
       S.metaDirty=false; toast("卓情報を保存しました");
     }catch(e){ fail(e); }
   });
@@ -369,14 +366,13 @@ function bootTable(){
   $("a-clear").addEventListener("click",()=>{ calSel.clear(); renderCal(); updateAddBtn(); });
   $("a-add").addEventListener("click", async()=>{
     const list=[...calSel].sort(); if(!list.length) return;
-    const time=$("a-time").value||"", note=$("a-note").value.trim();
+    const time=$("a-time").value||"";
     const btn=$("a-add"); btn.disabled=true; let n=0, dup=0;
     try{
       for(const date of list){
         if (S.dates.some(d=>d.date===date&&(d.time||"")===time)){ dup++; calSel.delete(date); continue; }
-        await addDoc(datesCol,{date, time, note}); n++; calSel.delete(date);
+        await addDoc(datesCol,{date, time, note:""}); n++; calSel.delete(date);
       }
-      $("a-note").value="";
       toast(`${n}日を追加しました`+(dup?`（${dup}日は登録済みのため省略）`:""));
     }catch(e){ fail(e); }
     finally{ renderCal(); updateAddBtn(); }

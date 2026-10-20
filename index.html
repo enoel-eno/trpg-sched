@@ -188,7 +188,6 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
     <h1 id="title">TRPG日程調整</h1>
     <div class="meta-row">
       <span>シナリオ <b id="m-scenario">未設定</b></span>
-      <span>時間 <b id="m-time">未設定</b></span>
       <span>回答 <b id="m-count">0人</b></span>
     </div>
     <p class="note" id="m-note" hidden></p>
@@ -216,9 +215,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
     <div class="grid2">
       <label for="g-title">卓名<input type="text" id="g-title" maxlength="60" placeholder="例：11月 CoC卓"></label>
       <label for="g-scenario">シナリオ<input type="text" id="g-scenario" maxlength="60" placeholder="例：狂気山脈 第1夜"></label>
-      <label for="g-time">セッション時間<input type="text" id="g-time" maxlength="40" placeholder="例：20:00〜24:00（ボイセ）"></label>
       <label for="g-status">状態<select id="g-status"><option value="adjusting">調整中</option><option value="decided">日程決定</option><option value="done">終了</option></select></label>
-      <label for="g-decided">決定した日<input type="date" id="g-decided"></label>
     </div>
     <label for="g-note">メモ（PLにも表示されます）<textarea id="g-note" maxlength="600" placeholder="例：ココフォリア使用。キャラシは前日までに提出"></textarea></label>
     <div class="actions"><button class="btn" id="g-save" type="button">卓情報を保存</button></div>
@@ -236,7 +233,6 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
     </div>
     <div class="grid2">
       <label for="a-time">開始時刻（任意・選んだ日すべてに適用）<input type="time" id="a-time"></label>
-      <label for="a-note">補足（任意）<input type="text" id="a-note" maxlength="40" placeholder="例：短めなら"></label>
     </div>
     <div class="actions">
       <button class="btn primary" id="a-add" type="button" disabled>日付を選んでください</button>
