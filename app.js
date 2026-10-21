@@ -66,6 +66,19 @@ async function copyText(text, okMsg){
 }
 function openDlg(d){ if(!d.open){ try{ d.showModal(); }catch(_){ d.setAttribute("open",""); } } }
 function closeDlg(d){ if(d.open){ try{ d.close(); }catch(_){ d.removeAttribute("open"); d.dispatchEvent(new Event("close")); } } }
+function confirmDel(msg, sub){
+  const d=$("confirm-dlg");
+  $("c-msg").textContent=msg; $("c-sub").textContent=sub||""; $("c-sub").hidden=!sub;
+  return new Promise(res=>{
+    let ok=false;
+    const done=()=>{ d.removeEventListener("close",onClose); $("c-ok").onclick=null; $("c-cancel").onclick=null; res(ok); };
+    const onClose=()=>done();
+    d.addEventListener("close",onClose);
+    $("c-ok").onclick=()=>{ ok=true; closeDlg(d); };
+    $("c-cancel").onclick=()=>closeDlg(d);
+    openDlg(d);
+  });
+}
 document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",e=>{ if(e.target===d) closeDlg(d); }));
 
 // ---------- GMログイン ----------
@@ -243,7 +256,6 @@ function renderFormMode(){
   $("form-h").textContent = editing ? "回答を編集中" : "参加可能日程を入力する";
   $("new-btn").hidden = !editing;
   $("del-btn").hidden = !editing;
-  $("del-btn").dataset.armed="false"; $("del-btn").textContent="この回答を削除";
   $("save-btn").textContent = editing ? "変更を保存" : "回答を保存";
 }
 function startEdit(id){
@@ -258,18 +270,39 @@ function resetForm(){
   renderFormDates(); renderFormMode();
 }
 
+const delSel=new Set();
 function renderGmDates(){
   const box=$("g-dates"); box.replaceChildren();
   const dates=sortedDates();
+  const ids=new Set(dates.map(d=>d.id));
+  for (const id of [...delSel]) if(!ids.has(id)) delSel.delete(id);
   if (!dates.length){ box.append(el("p",{class:"empty",text:"まだありません。"})); return; }
+  const allBtn=el("button",{class:"btn small",type:"button"});
+  const delBtn=el("button",{class:"btn small danger",type:"button"});
+  const sync=()=>{
+    allBtn.textContent = delSel.size===dates.length ? "選択を解除" : "すべて選択";
+    delBtn.textContent = `選択した${delSel.size}件を削除`; delBtn.disabled = !delSel.size;
+  };
+  allBtn.addEventListener("click",()=>{
+    if (delSel.size===dates.length) delSel.clear(); else dates.forEach(d=>delSel.add(d.id));
+    renderGmDates();
+  });
+  delBtn.addEventListener("click",async()=>{
+    const targets=dates.filter(d=>delSel.has(d.id)); if(!targets.length) return;
+    if (!await confirmDel(`選択した${targets.length}件の候補日を削除しますか？`, targets.map(dateLabel).join("、"))) return;
+    try{
+      const batch=writeBatch(db);
+      targets.forEach(d=>batch.delete(doc(db,"tables",tid,"dates",d.id)));
+      await batch.commit(); delSel.clear(); toast(`${targets.length}件の候補日を削除しました`);
+    }catch(e){ fail(e); }
+  });
+  box.append(el("div",{class:"actions"}, allBtn, delBtn));
   for (const dt of dates){
-    const b=el("button",{class:"btn small danger",type:"button","data-armed":"false",text:"削除"});
-    b.addEventListener("click",async()=>{
-      if (b.dataset.armed!=="true"){ b.dataset.armed="true"; b.textContent="本当に削除"; setTimeout(()=>{b.dataset.armed="false";b.textContent="削除";},3000); return; }
-      try{ await deleteDoc(doc(db,"tables",tid,"dates",dt.id)); toast("候補日を削除しました"); }catch(e){ fail(e); }
-    });
-    box.append(el("div",{class:"ditem"}, el("span",null, dateLabel(dt), dt.note? el("span",{class:"d-note",text:dt.note}):null), b));
+    const cb=el("input",{type:"checkbox"}); cb.checked=delSel.has(dt.id);
+    cb.addEventListener("change",()=>{ if(cb.checked) delSel.add(dt.id); else delSel.delete(dt.id); sync(); });
+    box.append(el("label",{class:"ditem"}, cb, el("span",null, dateLabel(dt), dt.note? el("span",{class:"d-note",text:dt.note}):null)));
   }
+  sync();
 }
 function fillMetaInputs(){
   if (S.metaDirty) return;
@@ -339,9 +372,8 @@ function bootTable(){
     }catch(e){ fail(e); }
     finally{ btn.disabled=false; }
   });
-  $("del-btn").addEventListener("click", async ev=>{
-    const b=ev.currentTarget;
-    if (b.dataset.armed!=="true"){ b.dataset.armed="true"; b.textContent="本当に削除する"; return; }
+  $("del-btn").addEventListener("click", async ()=>{
+    if (!await confirmDel("この回答を削除しますか？")) return;
     try{ await deleteDoc(doc(playersCol,S.editingId)); closeDlg($("form-dlg")); resetForm(); toast("回答を削除しました"); }catch(e){ fail(e); }
   });
   $("copy-btn").addEventListener("click", ()=>{
@@ -366,7 +398,7 @@ function bootTable(){
   $("a-clear").addEventListener("click",()=>{ calSel.clear(); renderCal(); updateAddBtn(); });
   $("a-add").addEventListener("click", async()=>{
     const list=[...calSel].sort(); if(!list.length) return;
-    const time=$("a-time").value||"";
+    const time="";
     const btn=$("a-add"); btn.disabled=true; let n=0, dup=0;
     try{
       for(const date of list){
@@ -398,6 +430,17 @@ const ORDER={adjusting:0,decided:1,done:2};
 const match=(it,f)=> f==="all" ? true : f==="active" ? it.status!=="done" : it.status===f;
 let unsubTables=null;
 
+async function deleteTableDeep(id){
+  const ref=doc(db,"tables",id);
+  for (const sub of ["dates","players"]){
+    const snap=await getDocs(collection(ref,sub));
+    let batch=writeBatch(db), n=0;
+    for (const d of snap.docs){ batch.delete(d.ref); if(++n===400){ await batch.commit(); batch=writeBatch(db); n=0; } }
+    if (n) await batch.commit();
+  }
+  await deleteDoc(ref);
+}
+const tableSel=new Set();
 function renderList(){
   const gate=$("list-gate"), main=$("list-main");
   if (!S.user || !S.gmChecked || !S.isGM){
@@ -419,13 +462,37 @@ function renderList(){
   const items=S.tables.filter(it=>match(it,S.filter)).sort((a,b)=>
     (ORDER[a.status]??0)-(ORDER[b.status]??0) ||
     (a.status==="decided" ? String(a.decided||"9").localeCompare(String(b.decided||"9")) : (b.createdAt||0)-(a.createdAt||0)));
+  for (const id of [...tableSel]) if(!items.some(it=>it.id===id)) tableSel.delete(id);
   if (!items.length){
     box.append(el("div",{class:"empty-card",text: S.tables.length ? "この状態の卓はありません。" : "卓はまだありません。右下の「＋ 新しい卓を作る」から作成できます。"}));
     return;
   }
+  const allBtn=el("button",{class:"btn small",type:"button"});
+  const delBtn=el("button",{class:"btn small danger",type:"button"});
+  const sync=()=>{
+    allBtn.textContent = tableSel.size===items.length ? "選択を解除" : "すべて選択";
+    delBtn.textContent = `選択した${tableSel.size}件を削除`; delBtn.disabled = !tableSel.size;
+  };
+  allBtn.addEventListener("click",()=>{
+    if (tableSel.size===items.length) tableSel.clear(); else items.forEach(it=>tableSel.add(it.id));
+    renderList();
+  });
+  delBtn.addEventListener("click",async()=>{
+    const targets=items.filter(it=>tableSel.has(it.id)); if(!targets.length) return;
+    if (!await confirmDel(`選択した${targets.length}件の卓を削除しますか？`, targets.map(it=>it.title||"（卓名未設定）").join("、")+"\n回答・候補日もすべて消えます。")) return;
+    delBtn.disabled=true;
+    try{
+      for (const it of targets) await deleteTableDeep(it.id);
+      tableSel.clear(); toast(`${targets.length}件の卓を削除しました`);
+    }catch(e){ fail(e); }
+  });
+  box.append(el("div",{class:"actions"}, allBtn, delBtn));
+  sync();
   for (const it of items){
+    const cb=el("input",{type:"checkbox","aria-label":"選択"}); cb.checked=tableSel.has(it.id);
+    cb.addEventListener("change",()=>{ if(cb.checked) tableSel.add(it.id); else tableSel.delete(it.id); sync(); });
     box.append(el("article",{class:"card"+(it.status==="done"?" done":"")},
-      el("div",{class:"name",text:it.title||"（卓名未設定）"}),
+      el("label",{class:"name sel"}, cb, el("span",{text:it.title||"（卓名未設定）"})),
       el("span",{class:"pill "+(it.status||"adjusting"),text:ST[it.status]||"調整中"}),
       el("div",{class:"meta"},
         el("span",null,"シナリオ ",el("b",{text:it.scenario||"未設定"})),
@@ -444,7 +511,7 @@ function openTableDlg(id){
   $("t-title").value=it?.title||""; $("t-scenario").value=it?.scenario||"";
   $("t-status").value=it?.status||"adjusting"; $("t-decided").value=it?.decided||""; $("t-memo").value=it?.memo||"";
   $("t-extra").hidden=!it;
-  const del=$("t-del"); del.hidden=!it; del.dataset.armed="false"; del.textContent="この卓を削除";
+  const del=$("t-del"); del.hidden=!it;
   openDlg($("table-dlg"));
 }
 function bootList(){
@@ -476,17 +543,10 @@ function bindList(){
   });
   $("t-del").addEventListener("click", async e=>{
     const b=e.currentTarget;
-    if (b.dataset.armed!=="true"){ b.dataset.armed="true"; b.textContent="本当に削除する（回答も消えます）"; return; }
+    if (!await confirmDel("この卓を削除しますか？", "回答・候補日もすべて消えます。")) return;
     b.disabled=true;
     try{
-      const ref=doc(db,"tables",S.editTableId);
-      for (const sub of ["dates","players"]){
-        const snap=await getDocs(collection(ref,sub));
-        let batch=writeBatch(db), n=0;
-        for (const d of snap.docs){ batch.delete(d.ref); if(++n===400){ await batch.commit(); batch=writeBatch(db); n=0; } }
-        if (n) await batch.commit();
-      }
-      await deleteDoc(ref);
+      await deleteTableDeep(S.editTableId);
       closeDlg($("table-dlg")); toast("卓を削除しました");
     }catch(err){ fail(err); } finally{ b.disabled=false; }
   });

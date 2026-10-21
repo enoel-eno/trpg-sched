@@ -20,7 +20,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='10' width='52' height='48' rx='6' fill='%23fff' stroke='%23000' stroke-width='4'/%3E%3Crect x='6' y='10' width='52' height='14' rx='4' fill='%23000'/%3E%3Crect x='16' y='3' width='6' height='12' rx='3' fill='%23000'/%3E%3Crect x='42' y='3' width='6' height='12' rx='3' fill='%23000'/%3E%3Cg fill='%23000'%3E%3Crect x='14' y='32' width='8' height='6'/%3E%3Crect x='28' y='32' width='8' height='6'/%3E%3Crect x='42' y='32' width='8' height='6'/%3E%3Crect x='14' y='44' width='8' height='6'/%3E%3Crect x='28' y='44' width='8' height='6'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
 html,body{margin:0}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -29,19 +29,19 @@ html,body{margin:0}
 /* Layout: 1カラム。卓ページ＝ヘッダー → 候補日カレンダー → 参加可能日程の表 → GMツール／卓一覧＝状態フィルタ → 卓カード。青みグレーの紙・チャコールの墨 */
 :root{
   --adj:#A8651E; --adj-soft:#F5EADC; --dec:#3E63A8; --dec-soft:#E3EAF6; --done:#6B4FA0; --done-soft:#ECE6F5;
-  --bg:#ECEFF1; --surface:#FFFFFF; --surface-2:#ECEFF1; --ink:#1E272E; --muted:#5F6C77; --line:#D5DCE1;
-  --accent:#34383E; --accent-ink:#FFFFFF; --accent-soft:#E1E6EA;
+  --bg:#f6f7f9; --surface:#ffffff; --surface-2:#f0f2f4; --ink:#1f2328; --muted:#6b7178; --line:#dde1e5;
+  --accent:#2b2f36; --accent-ink:#ffffff; --accent-soft:#f0f2f4;
   --stamp:#B04A3B; --stamp-soft:#F8EAE7;
   --ok:#3E63A8; --ok-soft:#E3EAF6; --night:#6B4FA0; --night-soft:#ECE6F5;
   --maybe:#A8651E; --maybe-soft:#F5EADC; --no:#A83A2E; --no-soft:#F8EAE7;
   --best:#E3EAF6; --best-line:#3E63A8;
-  --f-display:"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
-  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
-  --f-mono:"DM Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --f-display:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#14191D; --surface:#1C2328; --surface-2:#14191D; --ink:#E6EBEF; --muted:#97A3AD; --line:#2D363D;
-  --accent:#D0D8DF; --accent-ink:#1C2328; --accent-soft:#25303A;
+  --bg:#15171a; --surface:#1e2125; --surface-2:#272b30; --ink:#e6e8ea; --muted:#9aa0a6; --line:#30343a;
+  --accent:#d5d9de; --accent-ink:#1e2125; --accent-soft:#272b30;
   --stamp:#E38A79; --stamp-soft:#3A2420;
   --ok:#8FB0E8; --ok-soft:#1E2A40; --night:#B9A2E6; --night-soft:#2B2340;
   --maybe:#DDA563; --maybe-soft:#3A2D1C; --no:#EE8F84; --no-soft:#3A2420;
@@ -50,8 +50,8 @@ html,body{margin:0}
 
 }}
 :root[data-theme="dark"]{
-  --bg:#14191D; --surface:#1C2328; --surface-2:#14191D; --ink:#E6EBEF; --muted:#97A3AD; --line:#2D363D;
-  --accent:#D0D8DF; --accent-ink:#1C2328; --accent-soft:#25303A;
+  --bg:#15171a; --surface:#1e2125; --surface-2:#272b30; --ink:#e6e8ea; --muted:#9aa0a6; --line:#30343a;
+  --accent:#d5d9de; --accent-ink:#1e2125; --accent-soft:#272b30;
   --stamp:#E38A79; --stamp-soft:#3A2420;
   --ok:#8FB0E8; --ok-soft:#1E2A40; --night:#B9A2E6; --night-soft:#2B2340;
   --maybe:#DDA563; --maybe-soft:#3A2D1C; --no:#EE8F84; --no-soft:#3A2420;
@@ -61,14 +61,14 @@ html,body{margin:0}
 }
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6}
-.wrap{max-width:880px;margin:0 auto;padding-block:28px 112px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
-h1{font-family:var(--f-display);font-weight:700;font-size:clamp(1.6rem,4.5vw,2.2rem);line-height:1.25;margin:0;text-wrap:balance;letter-spacing:.02em}
-h2{font-size:1.05rem;margin:0;font-weight:700;letter-spacing:.04em}
-.eyebrow{font-size:.75rem;letter-spacing:.14em;color:var(--muted);font-weight:700}
+.wrap{max-width:880px;margin:0 auto;padding-block:48px 112px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(1.9rem,6vw,2.75rem);line-height:1.3;margin:0;text-wrap:balance;letter-spacing:.06em}
+h2{font-family:var(--f-display);font-size:1.15rem;margin:0;font-weight:800;letter-spacing:.04em}
+.eyebrow{display:flex;align-items:center;gap:12px;font-size:.75rem;letter-spacing:.24em;color:var(--muted)}.eyebrow::before{content:"";width:36px;height:1.5px;background:var(--ink)}
 .meta-row{display:flex;flex-wrap:wrap;gap:8px 20px;color:var(--muted);font-size:.92rem}
 .meta-row b{color:var(--ink);font-weight:500}
-.note{white-space:pre-wrap;color:var(--ink);font-size:.95rem;margin:0}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.note{white-space:pre-wrap;color:var(--ink);font-size:.95rem;margin:0;text-align:center}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
 .notice{background:var(--accent-soft);color:var(--ink);border-radius:12px;padding:10px 14px;font-size:.9rem}
 .notice[data-kind="warn"]{background:var(--maybe-soft)}
 .best{display:flex;flex-direction:column;gap:12px}
@@ -111,7 +111,7 @@ tbody tr.top td,tbody tr.top th{background:var(--best)}
 .pl{background:none;border:0;color:var(--accent);font:inherit;font-weight:700;cursor:pointer;padding:2px 4px;border-radius:4px;text-decoration:underline;text-underline-offset:3px}
 tr.comments td{white-space:normal;text-align:left;font-size:.82rem;color:var(--muted);vertical-align:top}
 label{font-size:.82rem;font-weight:700;color:var(--muted);letter-spacing:.04em;display:flex;flex-direction:column;gap:4px}
-input[type=text],input[type=date],input[type=time],textarea,select{font:inherit;font-size:16px;font-weight:400;letter-spacing:normal;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:100%;min-width:0}
+input[type=text],input[type=date],input[type=time],textarea,select{font:inherit;font-size:16px;font-weight:400;letter-spacing:normal;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-width:0}
 textarea{min-height:64px;resize:vertical}
 ::placeholder{font-weight:400;color:var(--muted);opacity:.8}
 input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -128,15 +128,14 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-vis
 .seg button[aria-pressed="true"][data-v="night"]{background:var(--night-soft);color:var(--night)}
 .seg button[aria-pressed="true"][data-v="x"]{background:var(--no-soft);color:var(--no)}
 .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.btn{font:inherit;font-weight:700;font-size:.88rem;border-radius:999px;padding:9px 16px;cursor:pointer;border:0;background:var(--accent-soft);color:var(--accent)}
-.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn{font:inherit;font-weight:700;font-size:.88rem;border-radius:8px;padding:8px 16px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}.btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}.btn.primary:hover:not(:disabled){filter:brightness(1.08);color:var(--accent-ink)}
 .btn.danger{background:transparent;border:1px solid var(--line);color:var(--no)}
-.btn.danger[data-armed="true"]{background:var(--no);color:var(--surface);border-color:var(--no)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn.small{padding:4px 10px;font-size:.8rem}
 .head-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
 .dlist{display:flex;flex-direction:column;gap:4px}
-.ditem{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:.92rem}
+.ditem{display:flex;justify-content:flex-start;align-items:center;gap:10px;cursor:pointer;font-weight:400;letter-spacing:normal;color:var(--ink);flex-direction:row;padding:6px 0;border-bottom:1px solid var(--line);font-size:.92rem}
 .cal{border:1px solid var(--line);border-radius:12px;padding:12px;width:100%;max-width:420px}
 .cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:700}
 .cal-nav{width:36px;height:36px;border-radius:999px;border:0;background:var(--accent-soft);color:var(--accent);font:inherit;font-size:1.2rem;line-height:1;cursor:pointer}
@@ -163,7 +162,7 @@ dialog .toast{bottom:calc(20px + env(safe-area-inset-bottom,0px))}
   dialog .dlg-body{border-radius:20px 20px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px));padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
 }
 .x-btn{width:36px;height:36px;border-radius:999px;border:0;background:var(--accent-soft);color:var(--accent);font:inherit;font-size:1.2rem;line-height:1;cursor:pointer}
-.fab{position:fixed;z-index:15;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--accent);color:var(--accent-ink);border:0;border-radius:999px;padding:14px 20px;font:inherit;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.18);cursor:pointer}
+.fab{position:fixed;z-index:15;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:14px 20px;font:inherit;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.18);cursor:pointer}
 .gm-tag{font-size:.7rem;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:4px;padding:2px 6px;letter-spacing:.08em;font-weight:700}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 
@@ -175,7 +174,7 @@ dialog .toast{bottom:calc(20px + env(safe-area-inset-bottom,0px))}
 .fseg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:700}
 .fseg .n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;margin-left:4px;opacity:.8}
 .tables{display:flex;flex-direction:column;gap:10px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:start}
 .card.done{opacity:.72}
 .card .name{font-weight:700;font-size:1.05rem;min-width:0;overflow-wrap:anywhere}
 .card .meta{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.85rem;color:var(--muted)}
@@ -189,6 +188,8 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
 .empty-card,.gate{color:var(--muted);text-align:center;padding:32px 16px;background:var(--surface);border:1px dashed var(--line);border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:12px}
 .gate p{margin:0}
 
+.card .name.sel{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:1.05rem;color:var(--ink);letter-spacing:normal}
+.card input[type=checkbox],.ditem input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);flex:none}
 </style>
 </head>
 <body>
@@ -243,9 +244,6 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
       </div>
       <div class="cal-grid" id="cal-grid"></div>
       <div class="cal-legend"><i></i>登録済みの候補日</div>
-    </div>
-    <div class="grid2">
-      <label for="a-time">開始時刻（任意・選んだ日すべてに適用）<input type="time" id="a-time"></label>
     </div>
     <div class="actions">
       <button class="btn primary" id="a-add" type="button" disabled>日付を選んでください</button>
@@ -308,7 +306,19 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
     <label for="t-memo">GM用メモ（PLには表示されません）<textarea id="t-memo" maxlength="400" placeholder="例：PL4人。キャラシ提出済み"></textarea></label>
     <div class="actions" style="justify-content:space-between">
       <button class="btn primary" id="t-save" type="button">保存</button>
-      <button class="btn danger" id="t-del" type="button" data-armed="false" hidden>この卓を削除</button>
+      <button class="btn danger" id="t-del" type="button" hidden>この卓を削除</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- 削除確認 -->
+<dialog id="confirm-dlg" aria-labelledby="c-msg">
+  <div class="panel dlg-body">
+    <p id="c-msg" style="margin:0;font-weight:700"></p>
+    <p id="c-sub" class="empty" style="margin:0;white-space:pre-line" hidden></p>
+    <div class="actions" style="justify-content:flex-end">
+      <button class="btn" id="c-cancel" type="button">キャンセル</button>
+      <button class="btn danger" id="c-ok" type="button">削除する</button>
     </div>
   </div>
 </dialog>
