@@ -193,6 +193,14 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
 .tabs button{font:inherit;font-weight:700;background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;color:var(--muted);padding:8px 14px;cursor:pointer}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
 .tabs .n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;margin-left:6px;font-weight:500;opacity:.8}
+.slotrows{display:flex;flex-direction:column;gap:8px}
+.srow{display:grid;grid-template-columns:3em minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px}
+.srow .sk{font-weight:700;font-size:.9rem;text-align:center;border-radius:999px;padding:2px 0}
+.srow.all .sk{background:var(--ok-soft);color:var(--ok)} .srow.day .sk{background:var(--maybe-soft);color:var(--maybe)} .srow.night .sk{background:var(--night-soft);color:var(--night)}
+.srow select{font-family:var(--f-mono)}tr.slotrow td{white-space:normal;font-size:.78rem;color:var(--muted);vertical-align:top}
+tr.slotrow .sl{white-space:nowrap}
+tr.slotrow .sl b{font-weight:700}
+tr.slotrow .sl.all b{color:var(--ok)} tr.slotrow .sl.day b{color:var(--maybe)} tr.slotrow .sl.night b{color:var(--night)}
 .card .name.sel{display:flex;flex-direction:row;align-items:center;gap:10px;text-align:left;cursor:pointer;font-size:1.05rem;color:var(--ink);letter-spacing:normal}
 .card input[type=checkbox],.ditem input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);flex:none}
 </style>
@@ -287,8 +295,10 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
       <div class="actions"><button class="btn small" id="new-btn" type="button" hidden>新しい人として入力</button>
       <button class="x-btn" id="close-btn" type="button" aria-label="閉じる">×</button></div>
     </div>
-    <label for="f-name">名前（PL名やHNでOK）<input type="text" id="f-name" maxlength="30" autocomplete="nickname" placeholder="例：きり"></label>
+    <label for="f-name">名前<input type="text" id="f-name" maxlength="30" autocomplete="nickname" placeholder="PL名やハンドルネームなど"></label>
     <div class="answers" id="f-answers"><p class="empty">候補日が追加されると、ここで 全日 / 昼 / 夜 / ✖ を選べます。</p></div>
+    <h2 style="margin-top:6px">時間帯の目安</h2>
+    <div id="f-slots"></div>
     <label for="f-comment">コメント（任意）<textarea id="f-comment" maxlength="300" placeholder="例：11/8の夜は22時からなら参加できます"></textarea></label>
     <div class="actions">
       <button class="btn primary" id="save-btn" type="button">回答を保存</button>
@@ -308,6 +318,8 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
     <div class="grid2" id="t-extra" hidden>
       <label for="t-status">状態<select id="t-status"><option value="adjusting">調整中</option><option value="decided">日程決定</option><option value="done">終了</option></select></label>
     </div>
+    <h2 style="margin-top:6px">時間帯の初期値</h2>
+    <div id="t-slots"></div>
     <label for="t-memo">GM用メモ（PLには表示されません）<textarea id="t-memo" maxlength="400" placeholder="例：PL4人。キャラシ提出済み"></textarea></label>
     <div class="actions" style="justify-content:space-between">
       <button class="btn primary" id="t-save" type="button">保存</button>

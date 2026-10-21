@@ -240,6 +240,11 @@ function renderGrid(){
       el("td",{class:"cnt day",text:r.d}), el("td",{class:"cnt night",text:r.n}), el("td",{class:"cnt x",text:r.x}),
       players.map(p=>{ const v=ans(p,r.dt.id); return el("td",null, el("span",{class:"mark "+(v||"n"),"aria-label":v?DESC[v]:"未回答",title:v?MARK[v]:"未回答",text:v?SHORT[v]:"–"})); })));
   }
+  if (players.some(p=>slotsText(p.slots))){
+    body.append(el("tr",{class:"slotrow"}, el("th",{class:"date",scope:"row",text:"時間帯の目安"}), el("td",{colspan:3}),
+      players.map(p=>el("td",null, ...SLOT_KINDS.filter(k=>(p.slots||{})[k]).map(k=>el("div",{class:"sl "+k},
+        el("b",{text:MARK[k]}), " "+slotRange(p.slots[k])))))));
+  }
   if (players.some(p=>p.comment)){
     body.append(el("tr",{class:"comments"}, el("th",{class:"date",scope:"row",text:"コメント"}), el("td",{colspan:3}),
       players.map(p=>el("td",null, p.comment ? el("div",{class:"cm",text:p.comment}) : null))));
@@ -247,6 +252,53 @@ function renderGrid(){
   box.append(el("table",null, el("thead",null,head), body));
 }
 
+// ---- 時間帯の目安（全日／昼／夜が、その人にとって何時から何時なのか） ----
+const SLOT_KINDS=["all","day","night"];
+const SLOT_START=540, SLOT_STEP=30, SLOT_COUNT=32;   // 9:00〜翌1:00 を30分刻み
+const fmtMin=m=> m>=1440 ? `翌${Math.floor((m-1440)/60)}:${String((m-1440)%60).padStart(2,"0")}` : `${Math.floor(m/60)}:${String(m%60).padStart(2,"0")}`;
+const slotRange=r=>`${fmtMin(r[0])}〜${fmtMin(r[1])}`;
+function cloneSlots(s){
+  const out={};
+  for (const k of SLOT_KINDS){
+    const r=s&&s[k];
+    if (Array.isArray(r) && r.length===2 && Number.isFinite(r[0]) && Number.isFinite(r[1]) && r[0]<r[1]) out[k]=[r[0],r[1]];
+  }
+  return out;
+}
+function slotsText(s){ return SLOT_KINDS.filter(k=>s&&s[k]).map(k=>`${MARK[k]} ${slotRange(s[k])}`).join(" / "); }
+const renderFormSlots=()=>renderSlotPicker($("f-slots"), S.draft.slots||(S.draft.slots={}));
+function renderSlotPicker(box, slots, hint){
+  box.replaceChildren();
+  const END=SLOT_START+SLOT_COUNT*SLOT_STEP;
+  const opts=(from,to)=>{
+    const o=[el("option",{value:"",text:"--:--"})];
+    for (let m=from;m<=to;m+=SLOT_STEP) o.push(el("option",{value:String(m),text:fmtMin(m)}));
+    return o;
+  };
+  const rows=el("div",{class:"slotrows"});
+  for (const k of SLOT_KINDS){
+    const st=el("select",{"aria-label":MARK[k]+"の開始"}, opts(SLOT_START,END-SLOT_STEP));
+    const en=el("select",{"aria-label":MARK[k]+"の終了"}, opts(SLOT_START+SLOT_STEP,END));
+    const sync=()=>{ const r=slots[k]; st.value=r?String(r[0]):""; en.value=r?String(r[1]):""; };
+    st.addEventListener("change",()=>{
+      if (!st.value){ delete slots[k]; return sync(); }
+      const s=+st.value, r=slots[k];
+      let e = r && r[1]>s ? r[1] : Math.min(END, s+120);
+      if (e<=s) e=s+SLOT_STEP;
+      slots[k]=[s,e]; sync();
+    });
+    en.addEventListener("change",()=>{
+      if (!en.value){ delete slots[k]; return sync(); }
+      const e=+en.value, r=slots[k];
+      let s = r && r[0]<e ? r[0] : Math.max(SLOT_START, e-120);
+      if (s>=e) s=e-SLOT_STEP;
+      slots[k]=[s,e]; sync();
+    });
+    sync();
+    rows.append(el("div",{class:"srow "+k}, el("span",{class:"sk",text:MARK[k]}), st, el("span",{text:"〜"}), en));
+  }
+  box.append(el("p",{class:"empty",style:"font-size:.85rem"},hint||"KPが設定した時間帯に変更希望がある場合は修正してください。"), rows);
+}
 function renderFormDates(){
   const box=$("f-answers"); box.replaceChildren();
   const dates=sortedDates();
@@ -269,14 +321,14 @@ function renderFormMode(){
 }
 function startEdit(id){
   const p=S.players.find(x=>x.id===id); if(!p) return;
-  S.editingId=id; S.draft={answers:{}};
+  S.editingId=id; S.draft={answers:{}, slots:cloneSlots(p.slots)};
   for (const dt of S.dates){ const v=ans(p,dt.id); if(v) S.draft.answers[dt.id]=v; }
   $("f-name").value=p.name||""; $("f-comment").value=p.comment||"";
-  renderFormDates(); renderFormMode(); openDlg($("form-dlg"));
+  renderFormDates(); renderFormSlots(); renderFormMode(); openDlg($("form-dlg"));
 }
 function resetForm(){
-  S.editingId=null; S.draft={answers:{}}; $("f-name").value=""; $("f-comment").value="";
-  renderFormDates(); renderFormMode();
+  S.editingId=null; S.draft={answers:{}, slots:cloneSlots(S.meta&&S.meta.slotDefaults)}; $("f-name").value=""; $("f-comment").value="";
+  renderFormDates(); renderFormSlots(); renderFormMode();
 }
 
 const delSel=new Set();
@@ -366,15 +418,16 @@ function bootTable(){
     const valid=new Set(S.dates.map(d=>d.id));
     const answers={}; for(const k in S.draft.answers) if(valid.has(k)) answers[k]=S.draft.answers[k];
     const comment=$("f-comment").value.trim();
+    const slots=cloneSlots(S.draft.slots);
     const btn=$("save-btn"); btn.disabled=true;
     try{
       let msg;
       if (S.editingId){
         const prev=S.players.find(p=>p.id===S.editingId);
-        await setDoc(doc(playersCol,S.editingId),{name, answers, comment, createdAt:(prev&&prev.createdAt)||Date.now(), updatedAt:Date.now(), expireAt:(prev&&prev.expireAt)||newExpiry()});
+        await setDoc(doc(playersCol,S.editingId),{name, answers, slots, comment, createdAt:(prev&&prev.createdAt)||Date.now(), updatedAt:Date.now(), expireAt:(prev&&prev.expireAt)||newExpiry()});
         msg="変更を保存しました";
       } else {
-        await addDoc(playersCol,{name, answers, comment, createdAt:Date.now(), updatedAt:Date.now(), expireAt:newExpiry()});
+        await addDoc(playersCol,{name, answers, slots, comment, createdAt:Date.now(), updatedAt:Date.now(), expireAt:newExpiry()});
         msg="回答を保存しました";
       }
       closeDlg($("form-dlg")); resetForm(); toast(msg);
@@ -389,6 +442,7 @@ function bootTable(){
     const name=$("f-name").value.trim()||"（名前未入力）";
     const lines=[`【${S.meta.title||"TRPG日程調整"}】${name}`];
     for (const dt of sortedDates()) lines.push(`${dateLabel(dt)} ${MARK[S.draft.answers[dt.id]]||"未回答"}`);
+    const st=slotsText(S.draft.slots); if(st) lines.push("時間帯の目安："+st);
     const c=$("f-comment").value.trim(); if(c) lines.push("コメント："+c);
     copyText(lines.join("\n"));
   });
@@ -535,6 +589,8 @@ function openTableDlg(id){
   $("t-title").value=it?.title||""; $("t-scenario").value=it?.scenario||"";
   $("t-status").value=it?.status||"adjusting"; $("t-memo").value=it?.memo||"";
   $("t-extra").hidden=!it;
+  S.tableSlots=cloneSlots(it?.slotDefaults);
+  renderSlotPicker($("t-slots"), S.tableSlots, "PLの入力欄に最初から入る、全日・昼・夜の目安です（任意）。PLは自分用に変更できます。");
   const del=$("t-del"); del.hidden=!it;
   openDlg($("table-dlg"));
 }
@@ -555,12 +611,12 @@ function bindList(){
     const b=$("t-save"); b.disabled=true;
     try{
       if (S.editTableId){
-        await updateDoc(doc(db,"tables",S.editTableId),{title, scenario:$("t-scenario").value.trim(), status:$("t-status").value,
+        await updateDoc(doc(db,"tables",S.editTableId),{title, scenario:$("t-scenario").value.trim(), status:$("t-status").value, slotDefaults:cloneSlots(S.tableSlots),
           memo:$("t-memo").value.trim()});
         closeDlg($("table-dlg")); toast("保存しました");
       } else {
         await addDoc(collection(db,"tables"),{title, scenario:$("t-scenario").value.trim(), time:"", note:"",
-          status:"adjusting", memo:$("t-memo").value.trim(), createdAt:Date.now(),
+          status:"adjusting", slotDefaults:cloneSlots(S.tableSlots), memo:$("t-memo").value.trim(), createdAt:Date.now(),
           ownerUid:S.user.uid, ownerEmail:S.user.email||"", expireAt:newExpiry()});
         closeDlg($("table-dlg")); toast("卓を作りました。「日程調整を開く」から候補日を追加できます");
       }

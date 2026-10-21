@@ -44,7 +44,7 @@ service cloud.firestore {
         allow create, update: if request.resource.data.name is string
                               && request.resource.data.name.size() <= 30
                               && request.resource.data.keys().hasOnly(
-                                   ['name','answers','comment','createdAt','updatedAt','expireAt']);
+                                   ['name','answers','slots','comment','createdAt','updatedAt','expireAt']);
         allow delete: if true;
       }
     }
