@@ -257,6 +257,9 @@ const SLOT_KINDS=["all","day","night"];
 const SLOT_START=540, SLOT_STEP=30, SLOT_COUNT=32;   // 9:00〜翌1:00 を30分刻み
 const fmtMin=m=> m>=1440 ? `翌${Math.floor((m-1440)/60)}:${String((m-1440)%60).padStart(2,"0")}` : `${Math.floor(m/60)}:${String(m%60).padStart(2,"0")}`;
 const slotRange=r=>`${fmtMin(r[0])}〜${fmtMin(r[1])}`;
+// GMが未設定の卓・新しい卓に最初から入れておく値
+const DEFAULT_SLOTS={all:[600,1470], day:[600,1080], night:[1260,1470]};
+const slotsOrDefault=s=> s===undefined ? cloneSlots(DEFAULT_SLOTS) : cloneSlots(s);
 function cloneSlots(s){
   const out={};
   for (const k of SLOT_KINDS){
@@ -369,8 +372,8 @@ function fillMetaInputs(){
   if (S.metaDirty) return;
   $("g-title").value=S.meta.title||""; $("g-scenario").value=S.meta.scenario||"";
   $("g-note").value=S.meta.note||""; $("g-status").value=S.meta.status||"adjusting";
-  S.gSlots=cloneSlots(S.meta.slotDefaults);
-  renderSlotPicker($("g-slots"), S.gSlots, "PLの入力欄に最初から入る、全日・昼・夜の目安です（任意）。保存すると、これから入力するPLに反映されます。", ()=>{ S.metaDirty=true; });
+  S.gSlots=slotsOrDefault(S.meta.slotDefaults);
+  renderSlotPicker($("g-slots"), S.gSlots, "PLの入力欄に最初から入る、全日・昼・夜の目安です（任意）。", ()=>{ S.metaDirty=true; });
 }
 function renderAll(){ renderHeader(); renderBest(); renderGrid(); renderGmDates(); }
 function applyGM(){ const o=canManage(); $("gm-panel").hidden = !o; if (o){ fillMetaInputs(); renderCal(); } }
@@ -591,8 +594,8 @@ function openTableDlg(id){
   $("t-title").value=it?.title||""; $("t-scenario").value=it?.scenario||"";
   $("t-status").value=it?.status||"adjusting"; $("t-memo").value=it?.memo||"";
   $("t-extra").hidden=!it;
-  S.tableSlots=cloneSlots(it?.slotDefaults);
-  renderSlotPicker($("t-slots"), S.tableSlots, "PLの入力欄に最初から入る、全日・昼・夜の目安です（任意）。PLは自分用に変更できます。");
+  S.tableSlots=slotsOrDefault(it?.slotDefaults);
+  renderSlotPicker($("t-slots"), S.tableSlots, "PLの入力欄に最初から入る、全日・昼・夜の目安です（任意）。");
   const del=$("t-del"); del.hidden=!it;
   openDlg($("table-dlg"));
 }
