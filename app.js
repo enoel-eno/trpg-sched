@@ -267,7 +267,7 @@ function cloneSlots(s){
 }
 function slotsText(s){ return SLOT_KINDS.filter(k=>s&&s[k]).map(k=>`${MARK[k]} ${slotRange(s[k])}`).join(" / "); }
 const renderFormSlots=()=>renderSlotPicker($("f-slots"), S.draft.slots||(S.draft.slots={}));
-function renderSlotPicker(box, slots, hint){
+function renderSlotPicker(box, slots, hint, onChange){
   box.replaceChildren();
   const END=SLOT_START+SLOT_COUNT*SLOT_STEP;
   const opts=(from,to)=>{
@@ -281,18 +281,18 @@ function renderSlotPicker(box, slots, hint){
     const en=el("select",{"aria-label":MARK[k]+"の終了"}, opts(SLOT_START+SLOT_STEP,END));
     const sync=()=>{ const r=slots[k]; st.value=r?String(r[0]):""; en.value=r?String(r[1]):""; };
     st.addEventListener("change",()=>{
-      if (!st.value){ delete slots[k]; return sync(); }
+      if (!st.value){ delete slots[k]; sync(); onChange&&onChange(); return; }
       const s=+st.value, r=slots[k];
       let e = r && r[1]>s ? r[1] : Math.min(END, s+120);
       if (e<=s) e=s+SLOT_STEP;
-      slots[k]=[s,e]; sync();
+      slots[k]=[s,e]; sync(); onChange&&onChange();
     });
     en.addEventListener("change",()=>{
-      if (!en.value){ delete slots[k]; return sync(); }
+      if (!en.value){ delete slots[k]; sync(); onChange&&onChange(); return; }
       const e=+en.value, r=slots[k];
       let s = r && r[0]<e ? r[0] : Math.max(SLOT_START, e-120);
       if (s>=e) s=e-SLOT_STEP;
-      slots[k]=[s,e]; sync();
+      slots[k]=[s,e]; sync(); onChange&&onChange();
     });
     sync();
     rows.append(el("div",{class:"srow "+k}, el("span",{class:"sk",text:MARK[k]}), st, el("span",{text:"〜"}), en));
@@ -369,6 +369,8 @@ function fillMetaInputs(){
   if (S.metaDirty) return;
   $("g-title").value=S.meta.title||""; $("g-scenario").value=S.meta.scenario||"";
   $("g-note").value=S.meta.note||""; $("g-status").value=S.meta.status||"adjusting";
+  S.gSlots=cloneSlots(S.meta.slotDefaults);
+  renderSlotPicker($("g-slots"), S.gSlots, "PLの入力欄に最初から入る、全日・昼・夜の目安です（任意）。保存すると、これから入力するPLに反映されます。", ()=>{ S.metaDirty=true; });
 }
 function renderAll(){ renderHeader(); renderBest(); renderGrid(); renderGmDates(); }
 function applyGM(){ const o=canManage(); $("gm-panel").hidden = !o; if (o){ fillMetaInputs(); renderCal(); } }
@@ -451,7 +453,7 @@ function bootTable(){
   ["g-title","g-scenario","g-note","g-status"].forEach(id=>$(id).addEventListener("input",()=>{S.metaDirty=true;}));
   $("g-save").addEventListener("click", async()=>{
     try{
-      await updateDoc(tableRef,{title:$("g-title").value.trim(), scenario:$("g-scenario").value.trim(), note:$("g-note").value.trim(), status:$("g-status").value});
+      await updateDoc(tableRef,{title:$("g-title").value.trim(), scenario:$("g-scenario").value.trim(), note:$("g-note").value.trim(), status:$("g-status").value, slotDefaults:cloneSlots(S.gSlots)});
       S.metaDirty=false; toast("卓情報を保存しました");
     }catch(e){ fail(e); }
   });
