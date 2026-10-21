@@ -241,7 +241,7 @@ function renderGrid(){
       players.map(p=>{ const v=ans(p,r.dt.id); return el("td",null, el("span",{class:"mark "+(v||"n"),"aria-label":v?DESC[v]:"未回答",title:v?MARK[v]:"未回答",text:v?SHORT[v]:"–"})); })));
   }
   if (players.some(p=>slotsText(p.slots))){
-    body.append(el("tr",{class:"slotrow"}, el("th",{class:"date",scope:"row",text:"時間帯の目安"}), el("td",{colspan:3}),
+    body.append(el("tr",{class:"slotrow"}, el("th",{class:"date",scope:"row",text:"卓予定時間"}), el("td",{colspan:3}),
       players.map(p=>el("td",null, ...SLOT_KINDS.filter(k=>(p.slots||{})[k]).map(k=>el("div",{class:"sl "+k},
         el("b",{text:MARK[k]}), " "+slotRange(p.slots[k])))))));
   }
@@ -373,7 +373,7 @@ function fillMetaInputs(){
   $("g-title").value=S.meta.title||""; $("g-scenario").value=S.meta.scenario||"";
   $("g-note").value=S.meta.note||""; $("g-status").value=S.meta.status||"adjusting";
   S.gSlots=slotsOrDefault(S.meta.slotDefaults);
-  renderSlotPicker($("g-slots"), S.gSlots, "PLの入力欄に最初から入る、全日・昼・夜の目安です（任意）。", ()=>{ S.metaDirty=true; });
+  renderSlotPicker($("g-slots"), S.gSlots, "これを目安に、PLは変更希望を入力することができます。", ()=>{ S.metaDirty=true; });
 }
 function renderAll(){ renderHeader(); renderBest(); renderGrid(); renderGmDates(); }
 function applyGM(){ const o=canManage(); $("gm-panel").hidden = !o; if (o){ fillMetaInputs(); renderCal(); } }
@@ -447,7 +447,7 @@ function bootTable(){
     const name=$("f-name").value.trim()||"（名前未入力）";
     const lines=[`【${S.meta.title||"TRPG日程調整"}】${name}`];
     for (const dt of sortedDates()) lines.push(`${dateLabel(dt)} ${MARK[S.draft.answers[dt.id]]||"未回答"}`);
-    const st=slotsText(S.draft.slots); if(st) lines.push("時間帯の目安："+st);
+    const st=slotsText(S.draft.slots); if(st) lines.push("卓予定時間："+st);
     const c=$("f-comment").value.trim(); if(c) lines.push("コメント："+c);
     copyText(lines.join("\n"));
   });
@@ -595,7 +595,7 @@ function openTableDlg(id){
   $("t-status").value=it?.status||"adjusting"; $("t-memo").value=it?.memo||"";
   $("t-extra").hidden=!it;
   S.tableSlots=slotsOrDefault(it?.slotDefaults);
-  renderSlotPicker($("t-slots"), S.tableSlots, "PLの入力欄に最初から入る、全日・昼・夜の目安です（任意）。");
+  renderSlotPicker($("t-slots"), S.tableSlots, "これを目安に、PLは変更希望を入力することができます。");
   const del=$("t-del"); del.hidden=!it;
   openDlg($("table-dlg"));
 }
