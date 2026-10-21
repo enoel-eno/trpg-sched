@@ -242,7 +242,7 @@ function renderGrid(){
   }
   if (players.some(p=>p.comment)){
     body.append(el("tr",{class:"comments"}, el("th",{class:"date",scope:"row",text:"コメント"}), el("td",{colspan:3}),
-      players.map(p=>el("td",{text:p.comment||""}))));
+      players.map(p=>el("td",null, p.comment ? el("div",{class:"cm",text:p.comment}) : null))));
   }
   box.append(el("table",null, el("thead",null,head), body));
 }
