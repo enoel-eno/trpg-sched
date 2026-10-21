@@ -475,9 +475,10 @@ function renderList(){
   const mine=it=>it.ownerUid===S.user.uid;
   const pool = S.isAdmin && S.scope==="mine" ? S.tables.filter(mine) : S.tables;
   const fb=$("filter"); fb.replaceChildren();
+  const sc=$("scope"); sc.hidden=!S.isAdmin; sc.replaceChildren();
   if (S.isAdmin) for (const [k,l] of [["mine","自分の卓"],["all","全員の卓"]])
-    fb.append(el("button",{type:"button","aria-pressed":String(S.scope===k),onclick:()=>{ S.scope=k; try{localStorage.setItem("taku.scope",k);}catch(_){} renderList(); }},l));
-  for (const [k,l] of FILTERS){
+    sc.append(el("button",{type:"button",role:"tab","aria-selected":String(S.scope===k),onclick:()=>{ S.scope=k; try{localStorage.setItem("taku.scope",k);}catch(_){} renderList(); }},
+      l, el("span",{class:"n",text:String(k==="mine" ? S.tables.filter(mine).length : S.tables.length)})));  for (const [k,l] of FILTERS){
     fb.append(el("button",{type:"button","aria-pressed":String(S.filter===k),onclick:()=>{ S.filter=k; try{localStorage.setItem("taku.filter",k);}catch(_){} renderList(); }},
       l, el("span",{class:"n",text:String(pool.filter(it=>match(it,k)).length)})));
   }
