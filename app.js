@@ -3,7 +3,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore, doc, collection, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc,
-  getDocs, query, limit, writeBatch
+  getDoc, getDocs, query, where, writeBatch, Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
@@ -87,19 +87,27 @@ function renderAuth(){
   if (!S.user){
     box.append(el("button",{class:"link-btn",type:"button",onclick:login},"GMとしてログイン"));
   } else {
-    box.append(...[el("span",{text: S.isGM ? "GMとしてログイン中" : (S.gmChecked ? "このアカウントはGMとして登録されていません" : "確認中…")}),
+    box.append(...[el("span",{text: S.isGM ? (S.isAdmin ? "管理者としてログイン中" : "GMとしてログイン中") : (S.gmChecked ? "このアカウントはGMとして登録されていません" : "確認中…")}),
       S.isGM && tid ? el("a",{class:"link-btn",href:location.pathname},"卓一覧へ") : null,
       el("button",{class:"link-btn",type:"button",onclick:()=>signOut(auth)},"ログアウト")].filter(Boolean));
   }
 }
+// 作成から180日たった卓は、GMが卓一覧を開いたときにアプリが削除する（TTLは課金必須のため使わない）
+const RETENTION_DAYS=180;
+const newExpiry=()=>Timestamp.fromMillis(Date.now()+RETENTION_DAYS*86400000);
+const canManage=()=>!!(S.isGM && S.user && (S.isAdmin || (S.meta && S.meta.ownerUid===S.user.uid)));
+
 async function login(){
   try{ await signInWithPopup(auth, new GoogleAuthProvider()); }
   catch(e){ if(e.code!=="auth/popup-closed-by-user" && e.code!=="auth/cancelled-popup-request") toast("ログインできませんでした（"+e.code+"）"); }
 }
 onAuthStateChanged(auth, async user=>{
-  S.user=user; S.isGM=false; S.gmChecked=false; S.authReady=true; renderAuth();
+  S.user=user; S.isGM=false; S.isAdmin=false; S.gmChecked=false; S.authReady=true; renderAuth();
   if (user){
-    try{ await getDocs(query(collection(db,"tables"), limit(1))); S.isGM=true; }
+    try{
+      const g=user.email ? await getDoc(doc(db,"gms",user.email.toLowerCase())) : null;
+      S.isGM=!!g && g.exists(); S.isAdmin=S.isGM && g.data().admin===true;
+    }
     catch(_){ S.isGM=false; }
     S.gmChecked=true;
   }
@@ -310,7 +318,7 @@ function fillMetaInputs(){
   $("g-note").value=S.meta.note||""; $("g-status").value=S.meta.status||"adjusting";
 }
 function renderAll(){ renderHeader(); renderBest(); renderGrid(); renderGmDates(); }
-function applyGM(){ $("gm-panel").hidden = !S.isGM; if (S.isGM){ fillMetaInputs(); renderCal(); } }
+function applyGM(){ const o=canManage(); $("gm-panel").hidden = !o; if (o){ fillMetaInputs(); renderCal(); } }
 
 // 候補日追加カレンダー
 const calSel=new Set();
@@ -362,10 +370,10 @@ function bootTable(){
       let msg;
       if (S.editingId){
         const prev=S.players.find(p=>p.id===S.editingId);
-        await setDoc(doc(playersCol,S.editingId),{name, answers, comment, createdAt:(prev&&prev.createdAt)||Date.now(), updatedAt:Date.now()});
+        await setDoc(doc(playersCol,S.editingId),{name, answers, comment, createdAt:(prev&&prev.createdAt)||Date.now(), updatedAt:Date.now(), expireAt:(prev&&prev.expireAt)||newExpiry()});
         msg="変更を保存しました";
       } else {
-        await addDoc(playersCol,{name, answers, comment, createdAt:Date.now(), updatedAt:Date.now()});
+        await addDoc(playersCol,{name, answers, comment, createdAt:Date.now(), updatedAt:Date.now(), expireAt:newExpiry()});
         msg="回答を保存しました";
       }
       closeDlg($("form-dlg")); resetForm(); toast(msg);
@@ -403,7 +411,7 @@ function bootTable(){
     try{
       for(const date of list){
         if (S.dates.some(d=>d.date===date&&(d.time||"")===time)){ dup++; calSel.delete(date); continue; }
-        await addDoc(datesCol,{date, time, note:""}); n++; calSel.delete(date);
+        await addDoc(datesCol,{date, time, note:"", expireAt:newExpiry()}); n++; calSel.delete(date);
       }
       toast(`${n}日を追加しました`+(dup?`（${dup}日は登録済みのため省略）`:""));
     }catch(e){ fail(e); }
@@ -415,7 +423,7 @@ function bootTable(){
   onSnapshot(tableRef, s=>{
     S.tableExists=s.exists();
     if (!s.exists()){ setStatus("この卓は見つかりませんでした。リンクが正しいかGMに確認してください。","warn"); return; }
-    S.meta=s.data()||{}; setStatus(""); renderHeader(); fillMetaInputs();
+    S.meta=s.data()||{}; setStatus(""); renderHeader(); fillMetaInputs(); applyGM();
   }, onErr);
   onSnapshot(datesCol, q=>{ S.dates=q.docs.map(d=>({id:d.id,...d.data()})); renderAll(); renderFormDates(); if(S.isGM) renderCal(); }, onErr);
   onSnapshot(playersCol, q=>{ S.players=q.docs.map(d=>({id:d.id,...d.data()})); renderAll();
@@ -439,6 +447,16 @@ async function deleteTableDeep(id){
     if (n) await batch.commit();
   }
   await deleteDoc(ref);
+}
+const purging=new Set();
+async function purgeExpired(){
+  const now=Date.now();
+  const old=S.tables.filter(it=>it.expireAt?.toMillis && it.expireAt.toMillis()<now && !purging.has(it.id));
+  for (const it of old){
+    purging.add(it.id);
+    try{ await deleteTableDeep(it.id); }catch(e){ console.error(e); }
+  }
+  if (old.length) toast(`期限切れの卓を${old.length}件削除しました`);
 }
 const tableSel=new Set();
 function renderList(){
@@ -495,7 +513,8 @@ function renderList(){
       el("label",{class:"name sel"}, cb, el("span",{text:it.title||"（卓名未設定）"})),
       el("span",{class:"pill "+(it.status||"adjusting"),text:ST[it.status]||"調整中"}),
       el("div",{class:"meta"},
-        el("span",null,"シナリオ ",el("b",{text:it.scenario||"未設定"}))),
+        el("span",null,"シナリオ ",el("b",{text:it.scenario||"未設定"})),
+        S.isAdmin ? el("span",null,"作成者 ",el("b",{text:it.ownerEmail||"（不明）"})) : null),
       it.memo ? el("p",{class:"memo",text:it.memo}) : null,
       el("div",{class:"row-actions"},
         el("a",{class:"btn primary",href:"?t="+encodeURIComponent(it.id)},"日程調整を開く"),
@@ -516,7 +535,7 @@ function openTableDlg(id){
 function bootList(){
   $("view-list").hidden=false;
   if (S.isGM && !unsubTables){
-    unsubTables=onSnapshot(collection(db,"tables"), q=>{ S.tables=q.docs.map(d=>({id:d.id,...d.data()})); renderList(); },
+    unsubTables=onSnapshot(S.isAdmin ? collection(db,"tables") : query(collection(db,"tables"), where("ownerUid","==",S.user.uid)), q=>{ S.tables=q.docs.map(d=>({id:d.id,...d.data()})); renderList(); purgeExpired(); },
       e=>{ console.error(e); toast("卓一覧を読み込めませんでした"); });
   }
   if (!S.isGM && unsubTables){ unsubTables(); unsubTables=null; S.tables=[]; }
@@ -535,7 +554,8 @@ function bindList(){
         closeDlg($("table-dlg")); toast("保存しました");
       } else {
         await addDoc(collection(db,"tables"),{title, scenario:$("t-scenario").value.trim(), time:"", note:"",
-          status:"adjusting", memo:$("t-memo").value.trim(), createdAt:Date.now()});
+          status:"adjusting", memo:$("t-memo").value.trim(), createdAt:Date.now(),
+          ownerUid:S.user.uid, ownerEmail:S.user.email||"", expireAt:newExpiry()});
         closeDlg($("table-dlg")); toast("卓を作りました。「日程調整を開く」から候補日を追加できます");
       }
     }catch(e){ fail(e); } finally{ b.disabled=false; }

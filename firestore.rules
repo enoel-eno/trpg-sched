@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // GM許可リスト: ドキュメントIDに小文字のメールアドレスを入れる（コンソールで手動追加）
+    match /gms/{email} {
+      allow get: if request.auth != null
+                 && request.auth.token.email_verified == true
+                 && request.auth.token.email.lower() == email;
+    }
+
+    function isGm() {
+      return request.auth != null
+          && request.auth.token.email_verified == true
+          && exists(/databases/$(database)/documents/gms/$(request.auth.token.email.lower()));
+    }
+    // 管理者: gms/<メール> に admin: true が入っているGM。全員の卓を一覧・編集・削除できる
+    function isAdmin() {
+      return isGm()
+          && get(/databases/$(database)/documents/gms/$(request.auth.token.email.lower())).data.get('admin', false) == true;
+    }
+    function isTableOwner(tid) {
+      return isGm()
+          && (isAdmin() || get(/databases/$(database)/documents/tables/$(tid)).data.ownerUid == request.auth.uid);
+    }
+
+    match /tables/{tid} {
+      // PLは卓IDを知っていれば1件取得できる。一覧は自分の卓だけ
+      allow get: if true;
+      allow list: if isAdmin() || (isGm() && resource.data.ownerUid == request.auth.uid);
+      allow create: if isGm() && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if isGm() && (isAdmin() || resource.data.ownerUid == request.auth.uid)
+                    && request.resource.data.ownerUid == resource.data.ownerUid;
+      allow delete: if isGm() && (isAdmin() || resource.data.ownerUid == request.auth.uid);
+
+      match /dates/{did} {
+        allow read: if true;
+        allow write: if isTableOwner(tid);
+      }
+
+      // PLは誰でも回答を追加・編集できる（名前をタップして他の人の回答も直せる仕様）
+      match /players/{pid} {
+        allow read: if true;
+        allow create, update: if request.resource.data.name is string
+                              && request.resource.data.name.size() <= 30
+                              && request.resource.data.keys().hasOnly(
+                                   ['name','answers','comment','createdAt','updatedAt','expireAt']);
+        allow delete: if true;
+      }
+    }
+  }
+}
