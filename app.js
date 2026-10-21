@@ -461,7 +461,7 @@ function renderList(){
   const box=$("tables"); box.replaceChildren();
   const items=S.tables.filter(it=>match(it,S.filter)).sort((a,b)=>
     (ORDER[a.status]??0)-(ORDER[b.status]??0) ||
-    (a.status==="decided" ? String(a.decided||"9").localeCompare(String(b.decided||"9")) : (b.createdAt||0)-(a.createdAt||0)));
+    (b.createdAt||0)-(a.createdAt||0));
   for (const id of [...tableSel]) if(!items.some(it=>it.id===id)) tableSel.delete(id);
   if (!items.length){
     box.append(el("div",{class:"empty-card",text: S.tables.length ? "この状態の卓はありません。" : "卓はまだありません。右下の「＋ 新しい卓を作る」から作成できます。"}));
@@ -495,8 +495,7 @@ function renderList(){
       el("label",{class:"name sel"}, cb, el("span",{text:it.title||"（卓名未設定）"})),
       el("span",{class:"pill "+(it.status||"adjusting"),text:ST[it.status]||"調整中"}),
       el("div",{class:"meta"},
-        el("span",null,"シナリオ ",el("b",{text:it.scenario||"未設定"})),
-        it.decided ? el("span",null,"決定日 ",el("b",{class:"d",text:fmtFull(it.decided)})) : null),
+        el("span",null,"シナリオ ",el("b",{text:it.scenario||"未設定"}))),
       it.memo ? el("p",{class:"memo",text:it.memo}) : null,
       el("div",{class:"row-actions"},
         el("a",{class:"btn primary",href:"?t="+encodeURIComponent(it.id)},"日程調整を開く"),
@@ -509,7 +508,7 @@ function openTableDlg(id){
   const it=id ? S.tables.find(x=>x.id===id) : null;
   $("t-h").textContent = it ? "卓を編集" : "新しい卓を作る";
   $("t-title").value=it?.title||""; $("t-scenario").value=it?.scenario||"";
-  $("t-status").value=it?.status||"adjusting"; $("t-decided").value=it?.decided||""; $("t-memo").value=it?.memo||"";
+  $("t-status").value=it?.status||"adjusting"; $("t-memo").value=it?.memo||"";
   $("t-extra").hidden=!it;
   const del=$("t-del"); del.hidden=!it;
   openDlg($("table-dlg"));
@@ -532,11 +531,11 @@ function bindList(){
     try{
       if (S.editTableId){
         await updateDoc(doc(db,"tables",S.editTableId),{title, scenario:$("t-scenario").value.trim(), status:$("t-status").value,
-          decided:$("t-decided").value||"", memo:$("t-memo").value.trim()});
+          memo:$("t-memo").value.trim()});
         closeDlg($("table-dlg")); toast("保存しました");
       } else {
         await addDoc(collection(db,"tables"),{title, scenario:$("t-scenario").value.trim(), time:"", note:"",
-          status:"adjusting", decided:"", memo:$("t-memo").value.trim(), createdAt:Date.now()});
+          status:"adjusting", memo:$("t-memo").value.trim(), createdAt:Date.now()});
         closeDlg($("table-dlg")); toast("卓を作りました。「日程調整を開く」から候補日を追加できます");
       }
     }catch(e){ fail(e); } finally{ b.disabled=false; }
