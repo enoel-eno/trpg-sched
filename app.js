@@ -28,6 +28,7 @@ const S = { user:null, isGM:false, gmChecked:false, authReady:false,
   meta:{}, tableExists:null, dates:[], players:[], editingId:null, draft:{answers:{}}, metaDirty:false,
   tables:[], filter:"active", editTableId:null };
 try{ const f=localStorage.getItem("taku.filter"); if(f) S.filter=f; }catch(_){}
+try{ S.scope=localStorage.getItem("taku.scope")==="all" ? "all" : "mine"; }catch(_){ S.scope="mine"; }
 
 function el(tag, attrs, ...kids){
   const e = document.createElement(tag);
@@ -471,18 +472,22 @@ function renderList(){
     return;
   }
   gate.hidden=true; main.hidden=false; $("add-table").hidden=false;
+  const mine=it=>it.ownerUid===S.user.uid;
+  const pool = S.isAdmin && S.scope==="mine" ? S.tables.filter(mine) : S.tables;
   const fb=$("filter"); fb.replaceChildren();
+  if (S.isAdmin) for (const [k,l] of [["mine","自分の卓"],["all","全員の卓"]])
+    fb.append(el("button",{type:"button","aria-pressed":String(S.scope===k),onclick:()=>{ S.scope=k; try{localStorage.setItem("taku.scope",k);}catch(_){} renderList(); }},l));
   for (const [k,l] of FILTERS){
     fb.append(el("button",{type:"button","aria-pressed":String(S.filter===k),onclick:()=>{ S.filter=k; try{localStorage.setItem("taku.filter",k);}catch(_){} renderList(); }},
-      l, el("span",{class:"n",text:String(S.tables.filter(it=>match(it,k)).length)})));
+      l, el("span",{class:"n",text:String(pool.filter(it=>match(it,k)).length)})));
   }
   const box=$("tables"); box.replaceChildren();
-  const items=S.tables.filter(it=>match(it,S.filter)).sort((a,b)=>
+  const items=pool.filter(it=>match(it,S.filter)).sort((a,b)=>
     (ORDER[a.status]??0)-(ORDER[b.status]??0) ||
     (b.createdAt||0)-(a.createdAt||0));
   for (const id of [...tableSel]) if(!items.some(it=>it.id===id)) tableSel.delete(id);
   if (!items.length){
-    box.append(el("div",{class:"empty-card",text: S.tables.length ? "この状態の卓はありません。" : "卓はまだありません。右下の「＋ 新しい卓を作る」から作成できます。"}));
+    box.append(el("div",{class:"empty-card",text: pool.length ? "この状態の卓はありません。" : "卓はまだありません。右下の「＋ 新しい卓を作る」から作成できます。"}));
     return;
   }
   const allBtn=el("button",{class:"btn small",type:"button"});
@@ -514,7 +519,7 @@ function renderList(){
       el("span",{class:"pill "+(it.status||"adjusting"),text:ST[it.status]||"調整中"}),
       el("div",{class:"meta"},
         el("span",null,"シナリオ ",el("b",{text:it.scenario||"未設定"})),
-        S.isAdmin ? el("span",null,"作成者 ",el("b",{text:it.ownerEmail||"（不明）"})) : null),
+        S.isAdmin ? el("span",null,"作成者 ",el("b",{text:mine(it) ? "自分" : (it.ownerEmail||"（不明）")})) : null),
       it.memo ? el("p",{class:"memo",text:it.memo}) : null,
       el("div",{class:"row-actions"},
         el("a",{class:"btn primary",href:"?t="+encodeURIComponent(it.id)},"日程調整を開く"),
