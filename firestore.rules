@@ -30,7 +30,7 @@ service cloud.firestore {
       allow list: if isAdmin() || (isGm() && resource.data.ownerUid == request.auth.uid);
       allow create: if isGm() && request.resource.data.ownerUid == request.auth.uid;
       allow update: if isGm() && (isAdmin() || resource.data.ownerUid == request.auth.uid)
-                    && request.resource.data.ownerUid == resource.data.ownerUid;
+                    && request.resource.data.get('ownerUid', null) == resource.data.get('ownerUid', null);
       allow delete: if isGm() && (isAdmin() || resource.data.ownerUid == request.auth.uid);
 
       match /dates/{did} {
