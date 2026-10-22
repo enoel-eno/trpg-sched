@@ -201,16 +201,11 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
 tr.slotrow .sl{white-space:nowrap}
 tr.slotrow .sl b{font-weight:700}
 tr.slotrow .sl.all b{color:var(--ok)} tr.slotrow .sl.day b{color:var(--maybe)} tr.slotrow .sl.night b{color:var(--night)}
-.ov{display:grid;gap:0 4px;align-items:start;min-width:min-content}
-.ov-hd{display:flex;flex-direction:column;align-items:center;text-align:center;font-size:.8rem;padding-bottom:6px;line-height:1.3}
-.ov-hd span{font-size:.68rem;white-space:nowrap}
-.ov-all{color:var(--ok);font-weight:700} .ov-none{color:var(--muted)}
-.ov-tl{font-family:var(--f-mono);font-size:.68rem;color:var(--muted);text-align:right;padding-right:4px}
-.ov-tl div{line-height:1;transform:translateY(-.45em)}
-.ov-col{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface-2)}
-.ov-cell{display:block;width:100%;border:0;border-bottom:1px dashed var(--line);padding:0;margin:0;font:inherit;font-family:var(--f-mono);font-size:.62rem;line-height:1;color:var(--ink);cursor:pointer;background:color-mix(in srgb,var(--ok) calc(var(--a)*80%),transparent)}
-.ov-cell.full{background:var(--ok);color:var(--surface);font-weight:700}
-.ov-cell.sel{outline:2px solid var(--accent);outline-offset:-2px}.card .name.sel{display:flex;flex-direction:row;align-items:center;gap:10px;text-align:left;cursor:pointer;font-size:1.05rem;color:var(--ink);letter-spacing:normal}
+.ov-row{display:flex;align-items:center;gap:12px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.ov-row:last-child{border-bottom:0}
+.ov-k{flex:none;width:3em;text-align:center;font-weight:700;font-size:.9rem;border-radius:999px;padding:2px 0}
+.ov-row.all .ov-k{background:var(--ok-soft);color:var(--ok)} .ov-row.day .ov-k{background:var(--maybe-soft);color:var(--maybe)} .ov-row.night .ov-k{background:var(--night-soft);color:var(--night)}
+.ov-v{font-family:var(--f-mono);font-variant-numeric:tabular-nums}.card .name.sel{display:flex;flex-direction:row;align-items:center;gap:10px;text-align:left;cursor:pointer;font-size:1.05rem;color:var(--ink);letter-spacing:normal}
 .card input[type=checkbox],.ditem input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);flex:none}
 </style>
 </head>
@@ -237,10 +232,8 @@ tr.slotrow .sl.all b{color:var(--ok)} tr.slotrow .sl.day b{color:var(--maybe)} t
   </section>
 
   <section class="panel" aria-labelledby="ov-h" id="ov-panel" hidden>
-    <h2 id="ov-h">時間帯の重なり</h2>
-    <p class="empty" style="font-size:.85rem">回答した「全日・昼・夜」に対応する卓予定時間をもとに、参加できる人数を30分ごとに色の濃さで表しています。</p>
-    <div class="scroll" id="ov"></div>
-    <div id="ov-detail"></div>
+    <h2 id="ov-h">卓予定時間の重なり</h2>
+    <div id="ov"></div>
   </section>
 
   <section class="panel" aria-labelledby="grid-h">

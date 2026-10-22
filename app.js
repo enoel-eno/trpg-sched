@@ -225,71 +225,29 @@ function renderBest(){
   }
 }
 
-// ---- 時間帯の重なり（候補日ごとの縦タイムライン） ----
-// その人がその日に答えた「全日／昼／夜」に対応する卓予定時間を、その人の参加可能時間として数える。
+// ---- 卓予定時間の重なり（全日／昼／夜ごと、全員が重なる時間だけを文字で表示） ----
 // 本人が卓予定時間を入れていなければ、GMの初期値（なければ既定値）を使う。
-const OV_H=16;
-const ovSel={id:null,idx:null};
-function availRange(p, dt){
-  const v=ans(p,dt.id); if(!v || v==="x") return null;
+function slotOf(p, k){
   const base=(S.meta&&S.meta.slotDefaults) || DEFAULT_SLOTS;
-  const r=((p.slots||{})[v]) || base[v];
+  const r=((p.slots||{})[k]) || base[k];
   return (Array.isArray(r)&&r[0]<r[1]) ? r : null;
 }
 function renderOverlap(){
-  const panel=$("ov-panel"), box=$("ov"), det=$("ov-detail");
-  const dates=sortedDates(), players=sortedPlayers();
-  panel.hidden = !dates.length || !players.length;
+  const panel=$("ov-panel"), box=$("ov");
+  const players=sortedPlayers();
+  panel.hidden = !players.length;
   if (panel.hidden) return;
-  box.replaceChildren(); det.replaceChildren();
-  const cols=dates.map(dt=>{
-    const cells=Array.from({length:SLOT_COUNT},()=>[]);
-    for (const p of players){
-      const r=availRange(p,dt); if(!r) continue;
-      for (let i=0;i<SLOT_COUNT;i++){
-        const m=SLOT_START+i*SLOT_STEP;
-        if (m>=r[0] && m+SLOT_STEP<=r[1]) cells[i].push(p);
-      }
-    }
-    // 全員が重なる最長の連続時間
-    let best=null, run=null;
-    cells.forEach((c,i)=>{
-      if (c.length===players.length){ run=run?{s:run.s,e:i+1}:{s:i,e:i+1}; if(!best||(run.e-run.s)>(best.e-best.s)) best={...run}; }
-      else run=null;
-    });
-    return {dt,cells,best};
-  });
-  const grid=el("div",{class:"ov",style:`grid-template-columns:3.2em repeat(${dates.length},minmax(72px,1fr))`});
-  grid.append(el("div"));
-  for (const c of cols) grid.append(el("div",{class:"ov-hd"}, el("b",{text:fmtDate(c.dt.date)}),
-    el("span",{class:c.best?"ov-all":"ov-none",text:c.best?`全員 ${fmtMin(SLOT_START+c.best.s*SLOT_STEP)}〜${fmtMin(SLOT_START+c.best.e*SLOT_STEP)}`:"全員は重ならず"})));
-  const tl=el("div",{class:"ov-tl"});
-  for (let i=0;i<SLOT_COUNT;i++){ const m=SLOT_START+i*SLOT_STEP; tl.append(el("div",{style:`height:${OV_H}px`,text:m%60===0?fmtMin(m):""})); }
-  grid.append(tl);
-  for (const c of cols){
-    const col=el("div",{class:"ov-col"});
-    c.cells.forEach((ps,i)=>{
-      const full=ps.length===players.length;
-      const cell=el("button",{type:"button",class:"ov-cell"+(full?" full":"")+(ovSel.id===c.dt.id&&ovSel.idx===i?" sel":""),
-        style:`height:${OV_H}px;--a:${ps.length/players.length}`,"aria-label":`${fmtDate(c.dt.date)} ${fmtMin(SLOT_START+i*SLOT_STEP)} ${ps.length}人`,
-        text:ps.length?String(ps.length):"",
-        onclick:()=>{ ovSel.id=c.dt.id; ovSel.idx=i; renderOverlap(); }});
-      col.append(cell);
-    });
-    grid.append(col);
+  box.replaceChildren();
+  for (const k of SLOT_KINDS){
+    // 全員の範囲が重なる時間（共通部分）
+    const rs=players.map(p=>slotOf(p,k));
+    let text="重なる時間なし";
+    if (rs.every(Boolean)){
+      const s=Math.max(...rs.map(r=>r[0])), e=Math.min(...rs.map(r=>r[1]));
+      if (s<e) text=`${fmtMin(s)}〜${fmtMin(e)}`;
+    }    box.append(el("div",{class:"ov-row "+k}, el("span",{class:"ov-k",text:MARK[k]}), el("span",{class:"ov-v",text})));
   }
-  box.append(grid);
-  const sel=cols.find(c=>c.dt.id===ovSel.id);
-  if (sel && ovSel.idx!==null){
-    const ps=sel.cells[ovSel.idx], names=new Set(ps.map(p=>p.id));
-    const t=SLOT_START+ovSel.idx*SLOT_STEP;
-    det.append(el("div",{class:"bdetail"},
-      el("div",{class:"t",text:`${fmtDate(sel.dt.date)} ${fmtMin(t)}〜${fmtMin(t+SLOT_STEP)}　参加できる人 ${ps.length}/${players.length}人`}),
-      el("div",{text:"◯ "+(ps.map(p=>p.name||"名無し").join("、")||"なし")}),
-      el("div",{class:"r",text:"× "+(players.filter(p=>!names.has(p.id)).map(p=>p.name||"名無し").join("、")||"なし")})));
-  } else det.append(el("p",{class:"empty",style:"font-size:.85rem",text:"時間をタップすると、その時間に参加できる人が見られます。"}));
 }
-
 function renderGrid(){
   const box=$("grid"); box.replaceChildren();
   const dates=sortedDates(), players=sortedPlayers();
