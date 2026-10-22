@@ -486,7 +486,7 @@ function bootTable(){
   $("g-save").addEventListener("click", async()=>{
     try{
       await updateDoc(tableRef,{title:$("g-title").value.trim(), scenario:$("g-scenario").value.trim(), note:$("g-note").value.trim(), status:$("g-status").value, slotDefaults:cloneSlots(S.gSlots)});
-      S.metaDirty=false; toast("卓情報を保存しました");
+      S.metaDirty=false; toast("卓設定を反映しました");
     }catch(e){ fail(e); }
   });
   $("g-copy").addEventListener("click", ()=>copyText(tableLink(tid),"PL用のリンクをコピーしました"));
