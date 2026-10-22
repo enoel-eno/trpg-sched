@@ -249,7 +249,7 @@ function renderOverlap(){
       if (s<e){
         const hrs=n=>String(Math.round(n*10)/10);
         const total=(e-s)/60, br=BREAK_H[k];
-        text=`${fmtMin(s)}〜${fmtMin(e)}（${br ? `${hrs(total)}時間・休憩${br}時間を除くと${hrs(Math.max(0,total-br))}時間` : `${hrs(total)}時間`}）`;
+        text=`${fmtMin(s)}〜${fmtMin(e)}（${hrs(Math.max(0,total-br))}時間${br ? `　※休憩${br}時間を除く` : ""}）`;
       }
     }    box.append(el("div",{class:"ov-row "+k}, el("span",{class:"ov-k",text:MARK[k]}), el("span",{class:"ov-v",text})));
   }
