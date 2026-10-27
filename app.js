@@ -113,7 +113,7 @@ onAuthStateChanged(auth, async user=>{
     S.gmChecked=true;
   }
   renderAuth();
-  if (tid) applyGM(); else bootList();
+  if (tid){ $("back-link").hidden=!S.isGM; applyGM(); } else bootList();
 });
 
 // =========================================================
